@@ -35,7 +35,17 @@ async function readTecplot(fpDat, name, fpOut) {
  * @return {Promise} 回傳Promise，resolve回傳成功訊息，reject回傳錯誤訊息
  * @example
  *
-
+ * let nodes = [...]
+ * let eles = [...]
+ *
+ * console.log('writing...')
+ * wmt.writeTecplot(name, nodes, eles, fpOut)
+ *     .then((r) => {
+ *         console.log('finish.')
+ *     })
+ *     .catch((err) => {
+ *         console.log(err)
+ *     })
  *
  */
 async function writeTecplot(name, nodes, eles, fpOut, opt = {}) {
