@@ -1,8 +1,8 @@
 import fs from 'fs'
-import get from 'lodash-es/get'
-import each from 'lodash-es/each'
-import size from 'lodash-es/size'
-import join from 'lodash-es/join'
+import get from 'lodash-es/get.js'
+import each from 'lodash-es/each.js'
+import size from 'lodash-es/size.js'
+import join from 'lodash-es/join.js'
 
 
 /**
