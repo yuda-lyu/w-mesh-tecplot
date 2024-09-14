@@ -50,6 +50,33 @@ async function readTecplot(fpDat, name, fpOut) {
  */
 async function writeTecplot(mnes, fpOut, opt = {}) {
 
+    // let t = `
+
+    //     TITLE = "Mesh" VARIABLES = "X", "Y", "Z", "M", "V"
+    //     ZONE N=16, E=2, F=fepoint, ET=brick
+    //     0 0 0 1 99.1
+    //     1 0 0 1 99.1
+    //     1 1 0 1 99.1
+    //     0 1 0 1 99.1
+    //     0 0 1 1 99.1
+    //     1 0 1 1 99.1
+    //     1 1 1 1 99.1
+    //     0 1 1 1 199.1
+
+    //     1 0 0.3 2 99.1
+    //     2 0 0.3 2 99.1
+    //     2 1 0.3 2 99.1
+    //     1 1 0.3 2 99.1
+    //     1 0 1.3 2 99.1
+    //     2 0 1.3 2 99.1
+    //     2 1 1.3 2 99.1
+    //     1 1 1.3 2 199.1
+
+    //     1 2 3 4 5 6 7 8
+    //     9 10 11 12 13 14 15 16
+
+    // `
+
     //check
     if (!iseobj(mnes) && isearr(mnes)) {
         throw new Error(`mnes is not an effective object or array`)
