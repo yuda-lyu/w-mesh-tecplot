@@ -9,10 +9,14 @@ let name = 'cv2tecplot'
 console.log('reading...')
 let j = fs.readFileSync(fpIn, 'utf8')
 let m = JSON.parse(j)
+m = {
+    ...m,
+    name,
+}
 // console.log('m', m)
 
 console.log('writing...')
-wmt.writeTecplot(name, m.nodes, m.eles, fpOut)
+wmt.writeTecplot(m, fpOut)
     .then((r) => {
         console.log('finish.')
     })
@@ -20,5 +24,4 @@ wmt.writeTecplot(name, m.nodes, m.eles, fpOut)
         console.log(err)
     })
 
-//node --no-warnings --max-old-space-size=120000 --es-module-specifier-resolution=node g.write.mjs
-
+//node --no-warnings --max-old-space-size=120000 g.write.mjs

@@ -4,7 +4,6 @@ A tool for Tecplot data.
 ![language](https://img.shields.io/badge/language-JavaScript-orange.svg) 
 [![npm version](http://img.shields.io/npm/v/w-mesh-tecplot.svg?style=flat)](https://npmjs.org/package/w-mesh-tecplot) 
 [![license](https://img.shields.io/npm/l/w-mesh-tecplot.svg?style=flat)](https://npmjs.org/package/w-mesh-tecplot) 
-[![gzip file size](http://img.badgesize.io/yuda-lyu/w-mesh-tecplot/master/dist/w-mesh-tecplot.umd.js.svg?compression=gzip)](https://github.com/yuda-lyu/w-mesh-tecplot)
 [![npm download](https://img.shields.io/npm/dt/w-mesh-tecplot.svg)](https://npmjs.org/package/w-mesh-tecplot) 
 [![npm download](https://img.shields.io/npm/dm/w-mesh-tecplot.svg)](https://npmjs.org/package/w-mesh-tecplot) 
 [![jsdelivr download](https://img.shields.io/jsdelivr/npm/hm/w-mesh-tecplot.svg)](https://www.jsdelivr.com/package/npm/w-mesh-tecplot)
