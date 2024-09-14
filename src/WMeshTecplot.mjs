@@ -78,7 +78,7 @@ async function writeTecplot(mnes, fpOut, opt = {}) {
     // `
 
     //check
-    if (!iseobj(mnes) && isearr(mnes)) {
+    if (!iseobj(mnes) && !isearr(mnes)) {
         throw new Error(`mnes is not an effective object or array`)
     }
     if (iseobj(mnes)) {
