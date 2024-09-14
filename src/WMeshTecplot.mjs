@@ -104,7 +104,7 @@ async function writeTecplot(mnes, fpOut, opt = {}) {
         c += h + '\n'
 
         each(nodes, (node) => {
-            console.log('node', node)
+            // console.log('node', node)
             // => node {
             //   indn: 5859,
             //   key: '23-95-1',
