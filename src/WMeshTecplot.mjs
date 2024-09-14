@@ -104,20 +104,39 @@ async function writeTecplot(mnes, fpOut, opt = {}) {
         c += h + '\n'
 
         each(nodes, (node) => {
+            console.log('node', node)
+            // => node {
+            //   indn: 5859,
+            //   key: '23-95-1',
+            //   x: 313850,
+            //   y: 2732050,
+            //   z: -20,
+            //   mat: 1,
+            //   active: 0
+            // }
             let vs = [
                 get(node, 'x', 0),
                 get(node, 'y', 0),
                 get(node, 'z', 0),
                 get(node, 'mat', 0),
-            // v1,
-            // v2,
-            // v3,
+                get(node, 'type', 0),
             ]
             let t = join(vs, ' ')
             c += t + '\n'
         })
 
         each(eles, (ele) => {
+            // console.log('ele', ele)
+            // => ele {
+            //   inde: 2136,
+            //   nodes: [
+            //      53023,  53285,
+            //      53286,  53024,
+            //     131885, 132147,
+            //     132148, 131886
+            //   ],
+            //   mat: 4
+            // }
             let vs = ele.nodes
             let t = join(vs, ' ')
             c += t + '\n'
@@ -127,7 +146,7 @@ async function writeTecplot(mnes, fpOut, opt = {}) {
     }
 
     //head
-    let head = `TITLE = "Mesh" VARIABLES = "X", "Y", "Z", "M"`
+    let head = `TITLE = "Mesh" VARIABLES = "X", "Y", "Z", "M", "TYPE"`
 
     //ct
     let ct = head + '\n'
