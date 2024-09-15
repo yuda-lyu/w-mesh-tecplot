@@ -29,17 +29,19 @@ async function readTecplot(fpDat, name, fpOut) {
 /**
  * 輸出數據至Tecplot檔案
  *
- * @param {String} fp 輸入檔案位置字串
  * @param {Object|Array} mnes 輸入數據物件或陣列，輸入物件須包含name、nodes、eles，輸入陣列時則各元素為物件(name、nodes、eles)
+ * @param {String} fpOut 輸入儲存檔案位置字串
  * @param {Object} [opt={}] 輸入設定物件，預設{}
  * @return {Promise} 回傳Promise，resolve回傳成功訊息，reject回傳錯誤訊息
  * @example
  *
+ * let name = 'abc'
  * let nodes = [...]
  * let eles = [...]
+ * let fpOut = '{path of file}'
  *
  * console.log('writing...')
- * wmt.writeTecplot(name, nodes, eles, fpOut)
+ * writeTecplot({ name, nodes, eles }, fpOut)
  *     .then((r) => {
  *         console.log('finish.')
  *     })
@@ -146,10 +148,10 @@ async function writeTecplot(mnes, fpOut, opt = {}) {
     }
 
     //head
-    let head = `TITLE = "Mesh" VARIABLES = "X", "Y", "Z", "M", "TYPE"`
+    let head = `TITLE = "Mesh" VARIABLES = "X", "Y", "Z", "M", "TYPE"` + '\n'
 
     //ct
-    let ct = head + '\n'
+    let ct = head
     each(mnes, (v) => {
 
         //name
