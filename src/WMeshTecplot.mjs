@@ -100,8 +100,8 @@ async function writeTecplot(mnes, fpOut, opt = {}) {
         let c = ''
 
         //h
-        let h = `ZONE T="${name}",N=${nd}, E=${ne}, F=fepoint, ET=brick`
-        c += h + '\n'
+        let h = `ZONE T="${name}",N=${nd}, E=${ne}, F=fepoint, ET=brick` + '\n'
+        c += h
 
         each(nodes, (node) => {
             // console.log('node', node)
@@ -121,8 +121,8 @@ async function writeTecplot(mnes, fpOut, opt = {}) {
                 get(node, 'mat', 0),
                 get(node, 'type', 0),
             ]
-            let t = join(vs, ' ')
-            c += t + '\n'
+            let t = join(vs, ' ') + '\n'
+            c += t
         })
 
         each(eles, (ele) => {
@@ -138,8 +138,8 @@ async function writeTecplot(mnes, fpOut, opt = {}) {
             //   mat: 4
             // }
             let vs = ele.nodes
-            let t = join(vs, ' ')
-            c += t + '\n'
+            let t = join(vs, ' ') + '\n'
+            c += t
         })
 
         return c
