@@ -1,4 +1,3 @@
-import fs from 'fs'
 import get from 'lodash-es/get.js'
 import each from 'lodash-es/each.js'
 import size from 'lodash-es/size.js'
@@ -6,6 +5,7 @@ import join from 'lodash-es/join.js'
 import isestr from 'wsemi/src/isestr.mjs'
 import iseobj from 'wsemi/src/iseobj.mjs'
 import isearr from 'wsemi/src/isearr.mjs'
+import fsBuildWriteStreamText from 'wsemi/src/fsBuildWriteStreamText.mjs'
 
 
 /**
@@ -87,6 +87,16 @@ async function writeTecplot(mnes, fpOut, opt = {}) {
         mnes = [mnes]
     }
 
+    //fsBuildWriteStreamText
+    let bdw = fsBuildWriteStreamText()
+
+    //create
+    let pm = bdw.create(fpOut)
+
+    //head
+    let head = `TITLE = "Mesh" VARIABLES = "X", "Y", "Z", "M", "TYPE"`
+    bdw.write(head)
+
     //core
     let core = (name, nodes, eles) => {
 
@@ -98,12 +108,9 @@ async function writeTecplot(mnes, fpOut, opt = {}) {
         let ne = size(eles)
         // console.log('ne', ne)
 
-        //c
-        let c = ''
-
         //h
-        let h = `ZONE T="${name}",N=${nd}, E=${ne}, F=fepoint, ET=brick` + '\n'
-        c += h
+        let h = `ZONE T="${name}",N=${nd}, E=${ne}, F=fepoint, ET=brick`
+        bdw.write(h)
 
         each(nodes, (node) => {
             // console.log('node', node)
@@ -123,8 +130,8 @@ async function writeTecplot(mnes, fpOut, opt = {}) {
                 get(node, 'mat', 0),
                 get(node, 'type', 0),
             ]
-            let t = join(vs, ' ') + '\n'
-            c += t
+            let t = join(vs, ' ')
+            bdw.write(t)
         })
 
         each(eles, (ele) => {
@@ -140,18 +147,13 @@ async function writeTecplot(mnes, fpOut, opt = {}) {
             //   mat: 4
             // }
             let vs = ele.nodes
-            let t = join(vs, ' ') + '\n'
-            c += t
+            let t = join(vs, ' ')
+            bdw.write(t)
         })
 
-        return c
     }
 
-    //head
-    let head = `TITLE = "Mesh" VARIABLES = "X", "Y", "Z", "M", "TYPE"` + '\n'
-
-    //ct
-    let ct = head
+    //each
     each(mnes, (v) => {
 
         //name
@@ -173,17 +175,15 @@ async function writeTecplot(mnes, fpOut, opt = {}) {
         }
 
         //core
-        let c = core(name, nodes, eles)
-
-        //merge
-        ct += c + '\n'
+        core(name, nodes, eles)
 
     })
 
-    //writeFileSync
-    fs.writeFileSync(fpOut, ct, 'utf8')
+    //end
+    bdw.end()
+    // console.log('bdw.end')
 
-    return null
+    return pm
 }
 
 /**
