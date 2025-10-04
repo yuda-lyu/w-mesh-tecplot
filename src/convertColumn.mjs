@@ -2,7 +2,7 @@ import get from 'lodash-es/get.js'
 import each from 'lodash-es/each.js'
 
 
-function convertColumn(name, eles) {
+function convertColumn(eles) {
 
     //ns, es
     let ns = []
@@ -83,7 +83,6 @@ function convertColumn(name, eles) {
     })
 
     return {
-        name,
         nodes: ns,
         eles: es,
     }
