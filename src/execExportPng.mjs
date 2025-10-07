@@ -38,12 +38,15 @@ let execExportPng = async(fpLay, fpOut, opt = {}) => {
     //fpLay
     fpLay = path.resolve(fpLay)
 
+    //id
+    let id = now2strp()
+
     //fpTempPng
-    let fpTempPng = `./_tecplot_pic_${now2strp()}.png`
+    let fpTempPng = `./_tecplot_pic_${id}.png`
     fpTempPng = path.resolve(fpTempPng)
 
     //fpTempMcr
-    let fpTempMcr = `./_tecplot_export_${now2strp()}.mcr`
+    let fpTempMcr = `./_tecplot_export_${id}.mcr`
     fpTempMcr = path.resolve(fpTempMcr)
 
     if (true) {
