@@ -29,7 +29,6 @@ npm i w-mesh-tecplot
 import fs from 'fs'
 import wmt from './src/WMeshTecplot.mjs'
 
-
 let fpIn = './_mesh/mesh.json'
 let fpOut = './_mesh/cv2tecplot.dat'
 let name = 'cv2tecplot'
