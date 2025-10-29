@@ -12,6 +12,7 @@ A tool for Tecplot data.
 To view documentation or get support, visit [docs](https://yuda-lyu.github.io/w-mesh-tecplot/global.html).
 
 ## Installation
+
 ### Using npm(ES6 module):
 ```alias
 npm i w-mesh-tecplot
