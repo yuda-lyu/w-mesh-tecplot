@@ -16,10 +16,14 @@ async function rp() {
         // bNodePolyfill: true,
         // bMinify: false,
         globals: {
+            'path': 'path',
             'fs': 'fs',
+            'url': 'url',
         },
         external: [
+            'path',
             'fs',
+            'url',
         ],
     })
         .catch((err) => {
