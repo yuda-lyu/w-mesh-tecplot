@@ -16,6 +16,15 @@ import fsBuildWriteStreamText from 'wsemi/src/fsBuildWriteStreamText.mjs'
  * @example
  *
 
+ * let fp = '{path of file}'
+ *
+ * readTecplot(fp)
+ *     .then((ltdt) => {
+ *         console.log(ltdt)
+ *     })
+ *     .catch((err) => {
+ *         console.log(err)
+ *     })
  *
  */
 async function readTecplot(fpDat, name, fpOut) {
@@ -194,6 +203,18 @@ async function writeTecplot(mnes, fpOut, opt = {}) {
  * @example
  *
 
+ * let name = 'abc'
+ * let nodes = [...]
+ * let eles = [...]
+ * let fpOut = '{path of file}'
+ *
+ * WMeshTecplot.writeTecplot({ name, nodes, eles }, fpOut)
+ *     .then((r) => {
+ *         console.log('finish.')
+ *     })
+ *     .catch((err) => {
+ *         console.log(err)
+ *     })
  *
  */
 let WMeshTecplot = {
