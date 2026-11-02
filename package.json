@@ -1,12 +1,12 @@
 {
   "name": "w-mesh-tecplot",
-  "version": "1.0.38",
+  "version": "1.0.39",
   "main": "dist/w-mesh-tecplot.umd.js",
   "dependencies": {
-    "wsemi": "^1.9.37"
+    "wsemi": "^1.9.42"
   },
   "devDependencies": {
-    "w-package-tools": "^1.1.21"
+    "w-package-tools": "^1.1.23"
   },
   "scripts": {
     "test": "mocha --parallel \"test/*.test.mjs\" --timeout 180000",
