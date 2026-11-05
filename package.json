@@ -1,9 +1,9 @@
 {
   "name": "w-mesh-tecplot",
-  "version": "1.0.43",
+  "version": "1.0.44",
   "main": "dist/w-mesh-tecplot.umd.js",
   "dependencies": {
-    "wsemi": "^1.9.49"
+    "wsemi": "^1.9.51"
   },
   "devDependencies": {
     "w-package-tools": "^1.1.23"
