@@ -54,22 +54,120 @@ import isnum from 'wsemi/src/isnum.mjs'
 import now2strp from 'wsemi/src/now2strp.mjs'
 import execProcess from 'wsemi/src/execProcess.mjs'
 import fsIsFile from 'wsemi/src/fsIsFile.mjs'
+import fsCopyFile from 'wsemi/src/fsCopyFile.mjs'
 import fsRenameFile from 'wsemi/src/fsRenameFile.mjs'
 import fsDeleteFile from 'wsemi/src/fsDeleteFile.mjs'
+import genID from 'wsemi/src/genID.mjs'
+
+
+//statFile, 取檔案之修改時間與大小, 不存在或非檔案回傳null
+let statFile = (fp) => {
+    try {
+        let st = fs.statSync(fp)
+        return st.isFile() ? { mtimeMs: st.mtimeMs, size: st.size } : null
+    }
+    catch (err) {
+        return null
+    }
+}
+
+
+//getErrOfBatchLog, 取Tecplot批次模式於cwd所寫batch.log內以Err開頭之行(錯誤原因, 例如Cannot find font input file), 以' | '串接
+//stBefore為執行前之statFile結果, 執行後之修改時間與大小皆未變者視為本次未寫(舊內容之錯誤不附入), 無法讀取回傳空字串
+let getErrOfBatchLog = (fpBatchLog, stBefore) => {
+    let st = statFile(fpBatchLog)
+    if (st === null) {
+        return ''
+    }
+    if (stBefore !== null &amp;&amp; st.mtimeMs === stBefore.mtimeMs &amp;&amp; st.size === stBefore.size) {
+        return ''
+    }
+    try {
+        let ls = fs.readFileSync(fpBatchLog, 'utf8').split(/\r?\n/)
+        return ls.map((v) => trim(v)).filter((v) => v.indexOf('Err') === 0).join(' | ')
+    }
+    catch (err) {
+        return ''
+    }
+}
+
+
+//isFileSafe, fsIsFile先stat再lstat, 兩者之間檔案被其他行程移走時lstat會拋ENOENT, 此時視為非檔案
+let isFileSafe = (fp) => {
+    try {
+        return fsIsFile(fp)
+    }
+    catch (err) {
+        return false
+    }
+}
+
+
+//rmCopy, 清除fpOut同資料夾之暫存複本, 回傳附加於錯誤訊息之字串: 清除失敗時寫明複本路徑與原因(使呼叫端得知殘留), 否則為空字串
+let rmCopy = (fpCopy) => {
+    let r = fsDeleteFile(fpCopy)
+    return get(r, 'error') ? `; the temporary copy [${fpCopy}] could not be removed: ${r.error}` : ''
+}
+
+
+//moveToOut, 將暫存png(位於cwd)移至fpOutAbs(fpOut為呼叫端給定之字串, 僅用於訊息), 成功回傳空字串, 失敗回傳錯誤訊息
+//  fsRenameFile以renameSync改名, 跨磁碟必失敗, 且目的檔已存在時回傳error而不改名, 故分三步:
+//  1.複製至fpOutAbs同資料夾之暫存複本fpCopy(上層資料夾不存在時由fsCopyFile建立); 失敗則舊fpOutAbs不動
+//  2.fpOutAbs已存在(檔案)則刪除(覆寫); 失敗則清除fpCopy, 舊fpOutAbs不動
+//  3.同資料夾內將fpCopy改名為fpOutAbs; 失敗時若舊檔已於步驟2刪除, 則保留fpCopy(新圖)並將其路徑寫入錯誤訊息, 否則清除fpCopy
+let moveToOut = (fpTempPng, fpOut, fpOutAbs, id) => {
+    let pre = `can not move exported png to fpOut[${fpOut}]`
+    if (!isestr(fpOutAbs)) {
+        return `${pre}: fpOut must be a non-empty string`
+    }
+
+    //fpCopy, 與cwd下之暫存png(_tecplot_pic_)不同名, 使fpOut位於cwd時兩者不相撞
+    let fpCopy = path.join(path.dirname(fpOutAbs), `_tecplot_out_${id}.png`)
+
+    //1.
+    let rc = fsCopyFile(fpTempPng, fpCopy)
+    if (get(rc, 'error')) {
+        let sfx = rmCopy(fpCopy) //複製中途失敗可能留下殘檔
+        return `${pre}: can not copy exported png to [${fpCopy}]: ${rc.error}${sfx}`
+    }
+
+    //2.
+    let bDeleted = false
+    if (isFileSafe(fpOutAbs)) {
+        let rd = fsDeleteFile(fpOutAbs)
+        if (get(rd, 'error')) {
+            let sfx = rmCopy(fpCopy)
+            return `${pre}: can not overwrite existing file: ${rd.error}${sfx}`
+        }
+        bDeleted = true
+    }
+
+    //3.
+    let rr = fsRenameFile(fpCopy, fpOutAbs)
+    if (get(rr, 'error')) {
+        if (bDeleted) {
+            return `${pre}: ${rr.error}; the old file has been deleted, the exported png is kept at [${fpCopy}]`
+        }
+        let sfx = rmCopy(fpCopy)
+        return `${pre}: ${rr.error}${sfx}`
+    }
+
+    return ''
+}
 
 
 /**
  * 呼叫Tecplot執行檔執行巨集(*.mcr)，將lay輸出(export)為png圖檔
  *
- * 內部產生暫存巨集與暫存png，透過Tecplot批次模式產圖後改名至fpOut，並清除暫存檔；產圖失敗時throw。
+ * 內部於cwd產生暫存巨集與暫存png(檔名含時間戳與隨機碼，同時呼叫不相撞)，透過Tecplot批次模式產圖後移至fpOut，成敗皆清除cwd之暫存檔。移至fpOut分三步(可跨磁碟)：①複製到fpOut同資料夾之暫存複本(`_tecplot_out_*.png`，上層資料夾不存在時建立)；②fpOut已存在(檔案)則刪除(覆寫)；③同資料夾內將暫存複本改名為fpOut。①失敗或②失敗(例如舊檔被其他程式鎖住)時throw，舊fpOut不動、暫存複本清除；③失敗(例如fpOut為資料夾)時throw，若舊檔已於②刪除則保留暫存複本(新圖)並於訊息寫明其路徑；以上訊息皆以`can not move exported png to fpOut[`開頭，暫存複本無法清除時於訊息末寫明其路徑與原因。Tecplot未產出png時throw，訊息以`can not export fpOut[`開頭，若本次執行有寫入cwd之batch.log，則於其後附`, batch.log: `與該檔以Err開頭之行(以` | `串接)。Tecplot啟動失敗或離開碼非0時，原樣reject execProcess回傳之字串。
  *
  * @param {String} fpLay 輸入Tecplot的lay檔案位置字串
- * @param {String} fpOut 輸入另存png圖檔之檔案位置字串
+ * @param {String} fpOut 輸入另存png圖檔之檔案位置字串，已存在時覆寫
  * @param {Object} [opt={}] 輸入設定物件，預設{}
  * @param {String} [opt.head] 輸入巨集開頭字串，預設'#!MC 1400'
  * @param {String} [opt.fpExe] 輸入Tecplot執行檔位置字串，預設'C:\\Program Files\\Tecplot\\Tec360 2013R1\\bin\\tec360.exe'
  * @param {Number} [opt.widthPic=1000] 輸入輸出圖片寬度數字，預設1000
- * @return {Promise} 回傳Promise，resolve回傳undefined，reject回傳錯誤訊息
+ * @return {Promise} 回傳Promise，resolve回傳undefined，reject回傳錯誤(未產出png或無法移至fpOut為Error，Tecplot啟動失敗或離開碼非0為字串)
  * @example
  *
  * await execExportPng('./ttt.lay', './out.png')
@@ -101,8 +199,11 @@ let execExportPng = async(fpLay, fpOut, opt = {}) => {
     //fpLay
     fpLay = path.resolve(fpLay)
 
-    //id
-    let id = now2strp()
+    //fpOutAbs, 於第一次await前固定絕對路徑, 避免等待期間cwd被改動而使覆寫(含刪除舊檔)落在別的資料夾
+    let fpOutAbs = isestr(fpOut) ? path.resolve(fpOut) : fpOut
+
+    //id, 秒級時間戳加隨機碼, 使同一行程與跨行程(同cwd)同時呼叫時暫存巨集、暫存png與同資料夾暫存複本之名皆唯一
+    let id = `${now2strp()}_${genID(8)}`
 
     //fpTempPng
     let fpTempPng = `./_tecplot_pic_${id}.png`
@@ -112,46 +213,62 @@ let execExportPng = async(fpLay, fpOut, opt = {}) => {
     let fpTempMcr = `./_tecplot_export_${id}.mcr`
     fpTempMcr = path.resolve(fpTempMcr)
 
-    if (true) {
+    //t
+    let t = `
 
-        let t = `
-        
 ${head}
 # Created by Tecplot
 
 $!EXPORTSETUP EXPORTFORMAT = PNG
 $!EXPORTSETUP IMAGEWIDTH = ${widthPic}
 $!EXPORTSETUP EXPORTFNAME = '${fpTempPng}'
-$!EXPORT 
+$!EXPORT
   EXPORTREGION = CURRENTFRAME
 
         `
-        t = trim(t) //head要放第一列, 故需要trim
+    t = trim(t) //head要放第一列, 故需要trim
 
+    //fpBatchLog, Tecplot批次模式於cwd寫batch.log(含錯誤原因), 記下執行前狀態以判斷是否為本次所寫
+    let fpBatchLog = path.resolve('./batch.log')
+    let stBatchLog = statFile(fpBatchLog)
+
+    //b, errMove
+    let b = false
+    let errMove = ''
+    try {
+
+        //writeFileSync, 寫入失敗(含部分寫入)亦由下方finally清除
         fs.writeFileSync(fpTempMcr, t, 'utf8')
 
+        //execProcess
+        let prog = fpExe
+        let args = ['-b', fpLay, '-p', fpTempMcr]
+        await execProcess(prog, args) //預設spawn
+
+        //b
+        b = fsIsFile(fpTempPng)
+
+        //moveToOut
+        if (b) {
+            errMove = moveToOut(fpTempPng, fpOut, fpOutAbs, id)
+        }
+
     }
+    finally {
 
-    //execProcess
-    let prog = fpExe
-    let args = ['-b', fpLay, '-p', fpTempMcr]
-    await execProcess(prog, args) //預設spawn
+        //fsDeleteFile, 無論成敗(含execProcess reject)皆清除暫存巨集與暫存png
+        fsDeleteFile(fpTempPng)
+        fsDeleteFile(fpTempMcr)
 
-    //b
-    let b = fsIsFile(fpTempPng)
-
-    //fsRenameFile
-    if (b) {
-        fsRenameFile(fpTempPng, fpOut)
     }
-
-    //fsDeleteFile
-    fsDeleteFile(fpTempPng)
-    fsDeleteFile(fpTempMcr)
 
     //check
     if (!b) {
-        throw new Error(`can not export fpOut[${fpOut}]`)
+        let msgLog = getErrOfBatchLog(fpBatchLog, stBatchLog)
+        throw new Error(`can not export fpOut[${fpOut}]${msgLog ? `, batch.log: ${msgLog}` : ''}`)
+    }
+    if (errMove) {
+        throw new Error(errMove)
     }
 
 }
@@ -172,7 +289,7 @@ export default execExportPng
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Sun Nov 15 2026 00:16:21 GMT+0800 (台北標準時間) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Sun Nov 15 2026 13:48:29 GMT+0800 (台北標準時間) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>
